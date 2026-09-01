@@ -345,34 +345,51 @@ const MONTH_META = {
 let completed = new Set();
 let xp = 0;
 let streak = 0;
-const STORAGE_KEY = "progress-v1";
 
-async function loadState(){
-  try{
-    const res = await window.storage.get(STORAGE_KEY, false);
-    if(res && res.value){
-      const parsed = JSON.parse(res.value);
-      completed = new Set(parsed.completed || []);
-      xp = parsed.xp || 0;
-      streak = parsed.streak || 0;
+const STORAGE_KEY = "megmutatom-magam-progress-v1";
+
+/*
+  A haladás a Safari localStorage-jában kerül mentésre.
+  Így az oldal bezárása után is megmarad ugyanazon az eszközön.
+*/
+
+function loadState(){
+  try {
+    const saved = localStorage.getItem(STORAGE_KEY);
+
+    if (saved) {
+      const parsed = JSON.parse(saved);
+
+      completed = new Set(
+        Array.isArray(parsed.completed)
+          ? parsed.completed.map(Number)
+          : []
+      );
+
+      xp = Number(parsed.xp) || 0;
+      streak = Number(parsed.streak) || 0;
     }
-  }catch(e){ /* nincs még mentett adat */ }
+  } catch (e) {
+    console.error("Betöltési hiba:", e);
+  }
+
   render();
 }
 
-async function saveState(){
-  try{
-    await window.storage.set(STORAGE_KEY, JSON.stringify({
-      completed:[...completed], xp, streak
-    }), false);
-  }catch(e){ console.error("Mentési hiba", e); }
+function saveState(){
+  try {
+    localStorage.setItem(
+      STORAGE_KEY,
+      JSON.stringify({
+        completed: [...completed],
+        xp: xp,
+        streak: streak
+      })
+    );
+  } catch (e) {
+    console.error("Mentési hiba:", e);
+  }
 }
-
-function firstIncomplete(){
-  for(const day of DAYS){ if(!completed.has(day.d)) return day.d; }
-  return DAYS[DAYS.length-1].d + 1;
-}
-
 /* ---------------- RENDER ---------------- */
 const rowsEl = document.getElementById('rows');
 const PATTERN = [0, 34, 52, 34, 0, -34, -52, -34]; // zigzag offset px
