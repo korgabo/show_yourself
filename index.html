@@ -1,0 +1,552 @@
+<!DOCTYPE html>
+<html lang="hu">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Megmutatom Magam</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#FAF6F1;
+    --ink:#1F3A3D;
+    --ink-soft:#5B6E6C;
+    --accent:#E8604C;
+    --accent-deep:#C94A38;
+    --accent-soft:#F6D9C9;
+    --gold:#E8A23D;
+    --gold-soft:#FBE7C6;
+    --locked:#DCD3C6;
+    --locked-ink:#B3A897;
+    --card:#FFFFFF;
+    --line:#E7DCCB;
+    --done:#3F7E6E;
+    --done-soft:#DCEFE8;
+  }
+  *{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:var(--bg);
+    font-family:'Inter',sans-serif;
+    color:var(--ink);
+    overflow-x:hidden;
+    min-height:100vh;
+  }
+  #app{max-width:430px;margin:0 auto;position:relative;min-height:100vh;}
+
+  /* ---------- HEADER ---------- */
+  header{
+    position:sticky; top:0; z-index:30;
+    background:rgba(250,246,241,0.92);
+    backdrop-filter:blur(10px);
+    border-bottom:1px solid var(--line);
+    padding:14px 18px 12px;
+  }
+  .head-row{display:flex; align-items:center; justify-content:space-between;}
+  .brand{display:flex; flex-direction:column; line-height:1.1;}
+  .brand-name{font-family:'Fraunces',serif; font-weight:600; font-size:19px; letter-spacing:-0.01em;}
+  .brand-sub{font-size:11.5px; color:var(--ink-soft); margin-top:2px;}
+  .stats{display:flex; gap:10px;}
+  .stat-pill{
+    display:flex; align-items:center; gap:5px;
+    background:var(--card); border:1px solid var(--line);
+    border-radius:999px; padding:6px 11px 6px 9px;
+    font-size:13px; font-weight:700;
+  }
+  .stat-pill svg{width:15px;height:15px;flex-shrink:0;}
+  .stat-pill.streak{color:var(--accent-deep);}
+  .stat-pill.xp{color:#B9791F;}
+
+  .progress-track{
+    margin-top:12px; height:8px; border-radius:999px;
+    background:var(--line); overflow:hidden;
+  }
+  .progress-fill{
+    height:100%; border-radius:999px;
+    background:linear-gradient(90deg, var(--accent), var(--gold));
+    width:0%; transition:width .5s ease;
+  }
+  .progress-label{font-size:11px; color:var(--ink-soft); margin-top:6px; text-align:right;}
+
+  /* ---------- PATH ---------- */
+  #path-wrap{position:relative; padding:34px 0 90px;}
+  svg#connector{position:absolute; top:0; left:0; width:100%; height:100%; z-index:1; pointer-events:none;}
+
+  .month-banner{
+    position:relative; z-index:2;
+    margin:8px auto 30px; width:88%;
+    background:var(--ink); color:#FAF6F1;
+    border-radius:18px; padding:16px 20px;
+    box-shadow:0 8px 18px -8px rgba(31,58,61,0.45);
+  }
+  .month-banner .m-eyebrow{font-size:11px; color:var(--gold-soft); font-weight:600;}
+  .month-banner .m-title{font-family:'Fraunces',serif; font-size:18px; font-weight:600; margin-top:3px;}
+  .month-banner .m-desc{font-size:12.5px; color:#C9D6D4; margin-top:5px; line-height:1.4;}
+
+  .week-banner{
+    position:relative; z-index:2;
+    margin:26px auto 22px; width:82%;
+    background:var(--card); border:1px solid var(--line);
+    border-radius:14px; padding:12px 16px;
+    text-align:center;
+  }
+  .week-banner .w-num{font-size:10.5px; font-weight:700; color:var(--accent-deep); letter-spacing:.02em;}
+  .week-banner .w-goal{font-size:13px; font-weight:600; margin-top:4px; line-height:1.35; color:var(--ink);}
+
+  .row{position:relative; z-index:2; display:flex; margin-bottom:26px;}
+  .node-wrap{position:relative;}
+  .node{
+    width:60px; height:60px; border-radius:50%;
+    display:flex; align-items:center; justify-content:center;
+    border:none; cursor:pointer; position:relative;
+    font-family:'Fraunces',serif; font-weight:600; font-size:17px;
+    box-shadow:0 4px 0 rgba(0,0,0,0.12);
+    transition:transform .12s ease;
+  }
+  .node:active{transform:translateY(3px); box-shadow:0 1px 0 rgba(0,0,0,0.12);}
+  .node.locked{background:var(--locked); color:var(--locked-ink); box-shadow:0 4px 0 #C9BEAE; cursor:default;}
+  .node.locked:active{transform:none; box-shadow:0 4px 0 #C9BEAE;}
+  .node.today{background:var(--accent); color:#fff; box-shadow:0 4px 0 var(--accent-deep);}
+  .node.done{background:var(--done); color:#fff; box-shadow:0 4px 0 #2C5B4F;}
+  .node.rest{background:var(--gold-soft); color:#9C6B1E; box-shadow:0 4px 0 #E0BE86;}
+  .node.rest.done{background:var(--done); color:#fff; box-shadow:0 4px 0 #2C5B4F;}
+  .node-daynum{position:absolute; bottom:-19px; left:50%; transform:translateX(-50%); font-size:10px; color:var(--ink-soft); font-weight:600; white-space:nowrap;}
+  .today-badge{
+    position:absolute; top:-13px; left:50%; transform:translateX(-50%);
+    background:var(--accent-deep); color:#fff; font-size:9px; font-weight:700;
+    padding:3px 8px; border-radius:999px; white-space:nowrap; letter-spacing:.02em;
+  }
+  .node svg{width:24px;height:24px;}
+
+  .final-banner{
+    position:relative; z-index:2; margin:30px auto 10px; width:85%;
+    background:linear-gradient(160deg, var(--accent-soft), var(--gold-soft));
+    border-radius:20px; padding:22px 20px; text-align:center;
+    border:1px solid var(--line);
+  }
+  .final-banner .f-emoji{font-size:30px;}
+  .final-banner .f-title{font-family:'Fraunces',serif; font-weight:600; font-size:17px; margin-top:6px;}
+  .final-banner .f-desc{font-size:12.5px; color:var(--ink-soft); margin-top:6px; line-height:1.4;}
+
+  /* ---------- MODAL ---------- */
+  .overlay{
+    position:fixed; inset:0; background:rgba(31,29,25,0.42);
+    display:flex; align-items:flex-end; justify-content:center;
+    z-index:100; opacity:0; pointer-events:none; transition:opacity .25s ease;
+  }
+  .overlay.show{opacity:1; pointer-events:auto;}
+  .sheet{
+    width:100%; max-width:430px; background:var(--card);
+    border-radius:22px 22px 0 0; padding:22px 22px 26px;
+    transform:translateY(24px); transition:transform .28s cubic-bezier(.2,.8,.3,1);
+    box-shadow:0 -10px 30px rgba(0,0,0,0.15);
+  }
+  .overlay.show .sheet{transform:translateY(0);}
+  .sheet-handle{width:36px; height:4px; background:var(--line); border-radius:999px; margin:0 auto 16px;}
+  .sheet-eyebrow{font-size:11px; font-weight:700; color:var(--accent-deep); letter-spacing:.02em;}
+  .sheet-title{font-family:'Fraunces',serif; font-size:19px; font-weight:600; margin-top:5px; line-height:1.3;}
+  .sheet-week{font-size:12px; color:var(--ink-soft); margin-top:8px; line-height:1.45; background:var(--bg); padding:10px 12px; border-radius:10px;}
+  .sheet-actions{display:flex; gap:10px; margin-top:20px;}
+  .btn{
+    flex:1; border:none; border-radius:14px; padding:14px 10px;
+    font-family:'Inter',sans-serif; font-weight:700; font-size:14.5px; cursor:pointer;
+  }
+  .btn-close{background:var(--bg); color:var(--ink-soft); border:1px solid var(--line);}
+  .btn-done{background:var(--done); color:#fff; box-shadow:0 4px 0 #2C5B4F;}
+  .btn-done:active{transform:translateY(3px); box-shadow:none;}
+  .btn-undo{background:var(--accent-soft); color:var(--accent-deep);}
+  .locked-note{font-size:12.5px; color:var(--ink-soft); margin-top:14px; line-height:1.5; text-align:center;}
+
+  .toast{
+    position:fixed; left:50%; bottom:28px; transform:translateX(-50%) translateY(20px);
+    background:var(--ink); color:#fff; padding:11px 18px; border-radius:999px;
+    font-size:13.5px; font-weight:600; z-index:200; opacity:0; transition:all .3s ease;
+    pointer-events:none; white-space:nowrap;
+  }
+  .toast.show{opacity:1; transform:translateX(-50%) translateY(0);}
+</style>
+</head>
+<body>
+<div id="app">
+  <header>
+    <div class="head-row">
+      <div class="brand">
+        <div class="brand-name">Megmutatom Magam</div>
+        <div class="brand-sub">90 napos út a saját arcodhoz</div>
+      </div>
+      <div class="stats">
+        <div class="stat-pill streak">
+          <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2c1 3-2 4-2 7a3 3 0 006 0c1.5 1.5 2 3.5 2 5.5A6.5 6.5 0 0111.5 21 6.5 6.5 0 015 14.5C5 9 9 6 12 2z"/></svg>
+          <span id="streak-count">0</span>
+        </div>
+        <div class="stat-pill xp">
+          <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l2.6 6.6L21 10l-5 4.4L17.4 21 12 17.3 6.6 21 8 14.4 3 10l6.4-1.4z"/></svg>
+          <span id="xp-count">0</span>
+        </div>
+      </div>
+    </div>
+    <div class="progress-track"><div class="progress-fill" id="progress-fill"></div></div>
+    <div class="progress-label" id="progress-label">0 / 90 nap kész</div>
+  </header>
+
+  <div id="path-wrap">
+    <svg id="connector"></svg>
+    <div id="rows"></div>
+  </div>
+</div>
+
+<div class="overlay" id="overlay">
+  <div class="sheet">
+    <div class="sheet-handle"></div>
+    <div class="sheet-eyebrow" id="sheet-eyebrow">1. HÉT</div>
+    <div class="sheet-title" id="sheet-title">Feladat</div>
+    <div class="sheet-week" id="sheet-week"></div>
+    <div id="sheet-body"></div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+/* ---------------- DATA ---------------- */
+const REST = "rest";
+const DAYS = [
+  // Month 1 — Week 1
+  {d:1,w:1,m:1,t:"Nézd meg a profilod úgy, mintha egy idegen ember profilja lenne."},
+  {d:2,w:1,m:1,t:"Ments el 3 olyan tartalmat, ami tetszik neked."},
+  {d:3,w:1,m:1,t:"Írj le 3 témát, amikről szívesen beszélnél egyszer."},
+  {d:4,w:1,m:1,t:"Készíts egy fotót valamiről, ami kapcsolódik hozzád vagy a munkádhoz."},
+  {d:5,w:1,m:1,t:"Nézd meg a fotót. Nem kell közzétenned."},
+  {d:6,w:1,m:1,t:"Tegyél ki egy teljesen egyszerű Storyt."},
+  {d:7,w:1,m:1,type:REST,t:"Gondold át: mennyire volt ijesztő ez a hét, 1–10 között?"},
+  // Week 2
+  {d:8,w:2,m:1,t:"Írj le egy gondolatot, ami ma eszedbe jutott."},
+  {d:9,w:2,m:1,t:"Írj hozzá még egy mondatot."},
+  {d:10,w:2,m:1,t:"Készíts hozzá egy egyszerű képet."},
+  {d:11,w:2,m:1,t:"Tedd ki Storyba, ha komfortos."},
+  {d:12,w:2,m:1,t:"Írj egy rövid véleményt valamiről, ami érdekel."},
+  {d:13,w:2,m:1,t:"Olvasd vissza, amit írtál."},
+  {d:14,w:2,m:1,type:REST,t:"Ha jólesik: posztold. Ha nem, hagyd pihenni a gondolatot."},
+  // Week 3
+  {d:15,w:3,m:1,t:"Készíts egy fotót magadról, csak saját használatra."},
+  {d:16,w:3,m:1,t:"Nézd meg a fotót, és ne töröld ki."},
+  {d:17,w:3,m:1,t:"Készíts egy másik fotót."},
+  {d:18,w:3,m:1,t:"Válassz egyet a kettő közül."},
+  {d:19,w:3,m:1,t:"Tedd ki Storyba, akár szöveg nélkül is."},
+  {d:20,w:3,m:1,t:"Ha szeretnéd, írj mellé egyetlen mondatot."},
+  {d:21,w:3,m:1,type:REST,t:"Pihenő nap és heti értékelés."},
+  // Week 4
+  {d:22,w:4,m:1,t:"Vegyél fel 5 másodpercet magadról. Nem kell közzétenned."},
+  {d:23,w:4,m:1,t:"Nézd vissza a felvételt."},
+  {d:24,w:4,m:1,t:"Vegyél fel egy újabb, 5–10 másodperces videót."},
+  {d:25,w:4,m:1,t:"Próbáld ki egy másik szögből."},
+  {d:26,w:4,m:1,t:"Válaszd ki azt, amelyik a legkevésbé zavar."},
+  {d:27,w:4,m:1,t:"Ha szeretnéd, tedd ki Storyba."},
+  {d:28,w:4,m:1,type:REST,t:"Pihenő nap."},
+  {d:29,w:4,m:1,type:REST,t:"Írd le: mi lett könnyebb az első hónaphoz képest?"},
+  {d:30,w:4,m:1,type:REST,t:"Folytasd az összegzést — zárd le magadban az 1. hónapot."},
+
+  // Month 2 — Week 5
+  {d:31,w:5,m:2,t:"Vegyél fel egy 5–10 másodperces hangfelvételt."},
+  {d:32,w:5,m:2,t:"Hallgasd vissza."},
+  {d:33,w:5,m:2,t:"Készíts egy újabb hangfelvételt."},
+  {d:34,w:5,m:2,t:"Próbáld ki egy videó alatt, narrációként."},
+  {d:35,w:5,m:2,t:"Ha komfortos, tegyél ki egy rövid hangos Storyt."},
+  {d:36,w:5,m:2,type:REST,t:"Pihenő nap."},
+  {d:37,w:5,m:2,type:REST,t:"Heti értékelés: mi változott a saját hangoddal kapcsolatban?"},
+  // Week 6
+  {d:38,w:6,m:2,t:"Készíts egy 5–10 másodperces videót magadról."},
+  {d:39,w:6,m:2,t:"Mondj benne egy mondatot."},
+  {d:40,w:6,m:2,t:"Nézd vissza."},
+  {d:41,w:6,m:2,t:"Készíts még egy verziót."},
+  {d:42,w:6,m:2,t:"Ha komfortos, tedd ki Storyba."},
+  {d:43,w:6,m:2,type:REST,t:"Pihenő nap."},
+  {d:44,w:6,m:2,type:REST,t:"Heti értékelés."},
+  // Week 7
+  {d:45,w:7,m:2,t:"Válassz egy témát, amiről szívesen beszélnél."},
+  {d:46,w:7,m:2,t:"Írj róla 2 mondatot."},
+  {d:47,w:7,m:2,t:"Mondd fel videón."},
+  {d:48,w:7,m:2,t:"Nézd vissza."},
+  {d:49,w:7,m:2,t:"Ha tetszik, amit láttál: publikáld."},
+  {d:50,w:7,m:2,type:REST,t:"Pihenő nap."},
+  {d:51,w:7,m:2,type:REST,t:"Heti értékelés."},
+  // Week 8
+  {d:52,w:8,m:2,t:"Készíts egy rövid videót."},
+  {d:53,w:8,m:2,t:"Fogalmazz meg benne egyetlen gondolatot."},
+  {d:54,w:8,m:2,t:"Tedd ki Storyba."},
+  {d:55,w:8,m:2,type:REST,t:"Pihenő nap."},
+  {d:56,w:8,m:2,t:"Készíts még egy rövid videót, néhány nappal az előző után."},
+  {d:57,w:8,m:2,type:REST,t:"Pihenő nap."},
+  {d:58,w:8,m:2,type:REST,t:"Hónap-értékelés: mi lett könnyebb a 2. hónapban?"},
+
+  // Month 3 — Week 9
+  {d:59,w:9,m:3,t:"Vegyél fel egy 5 másodperces videót."},
+  {d:60,w:9,m:3,t:"Vegyél fel egy 10 másodperces videót."},
+  {d:61,w:9,m:3,t:"Mondj benne egy mondatot."},
+  {d:62,w:9,m:3,t:"Tedd ki egy Storyba."},
+  {d:63,w:9,m:3,t:"Egy újabb próbálkozás, amivel elégedettebb vagy."},
+  {d:64,w:9,m:3,type:REST,t:"Pihenő nap."},
+  {d:65,w:9,m:3,type:REST,t:"Heti értékelés."},
+  // Week 10
+  {d:66,w:10,m:3,t:"Válassz egy témát."},
+  {d:67,w:10,m:3,t:"Mondj róla 2 mondatot."},
+  {d:68,w:10,m:3,t:"Vegyél fel 2 verziót."},
+  {d:69,w:10,m:3,t:"Válaszd ki a természetesebbet."},
+  {d:70,w:10,m:3,t:"Tedd ki, ha készen állsz rá."},
+  {d:71,w:10,m:3,type:REST,t:"Pihenő nap."},
+  {d:72,w:10,m:3,type:REST,t:"Heti értékelés."},
+  // Week 11
+  {d:73,w:11,m:3,t:"Készíts egy rövid videót."},
+  {d:74,w:11,m:3,t:"Legyen benne az arcod, teljesen."},
+  {d:75,w:11,m:3,t:"Beszélj egy olyan témáról, amihez értesz."},
+  {d:76,w:11,m:3,t:"Ne szerkeszd túl — hagyd természetesnek."},
+  {d:77,w:11,m:3,t:"Publikáld."},
+  {d:78,w:11,m:3,type:REST,t:"Pihenő nap."},
+  {d:79,w:11,m:3,type:REST,t:"Heti értékelés."},
+  // Week 12
+  {d:80,w:12,m:3,t:"Gondold át, miről szeretnél mesélni a záró videóban."},
+  {d:81,w:12,m:3,t:"Írj hozzá néhány gondolatot, vázlatpontokban."},
+  {d:82,w:12,m:3,t:"Gyakorold el hangosan, kamera nélkül."},
+  {d:83,w:12,m:3,t:"Vegyél fel egy próbaverziót."},
+  {d:84,w:12,m:3,t:"Nézd vissza, finomítsd."},
+  {d:85,w:12,m:3,t:"Vedd fel a végleges verziót — 15–20 másodperc, ennyi elég."},
+  {d:86,w:12,m:3,t:"Publikáld, ha készen állsz rá."},
+  // Final reflection
+  {d:87,w:13,m:3,type:REST,t:"Mennyire zavar már, hogy az ismerőseid látnak? (1–10)"},
+  {d:88,w:13,m:3,type:REST,t:"Mennyire zavar a saját hangod és a saját arcod videón? (1–10)"},
+  {d:89,w:13,m:3,type:REST,t:"Mennyire könnyű most megnyomni a „Közzététel” gombot?"},
+  {d:90,w:13,m:3,type:REST,t:"🏆 Nézz vissza az egész útra. Mi lett könnyebb, mint 90 napja volt?"},
+];
+
+const WEEK_META = {
+  1:{goal:"Megszokni, hogy a profilod alatt vagy jelen.", label:"1. hét"},
+  2:{goal:"Elkezd megjelenni a személyiséged — még csak szövegben.", label:"2. hét"},
+  3:{goal:"Megjelenik rólad valami, de nem kell szerepelned.", label:"3. hét"},
+  4:{goal:"Megszokni, hogy videón is látod magad.", label:"4. hét"},
+  5:{goal:"Halljam a saját hangomat nyilvános tartalomban.", label:"5. hét"},
+  6:{goal:"Egy mondatot vállalok magamból.", label:"6. hét"},
+  7:{goal:"Nem csak tartalmat készítek — véleményt is mondok.", label:"7. hét"},
+  8:{goal:"Megtanulom, hogy nem történik semmi rossz attól, hogy látnak.", label:"8. hét"},
+  9:{goal:"Megszólalok.", label:"9. hét"},
+  10:{goal:"Nem tökéletes akarok lenni, hanem természetes.", label:"10. hét"},
+  11:{goal:"Vállalom, hogy ez az én tartalmam.", label:"11. hét"},
+  12:{goal:"Egy videó, ami egy hónappal korábban elképzelhetetlennek tűnt.", label:"12. hét"},
+  13:{goal:"Nem az számít, hogy elmúlik-e az izgalom — hanem hogy vele együtt is megcsinálod.", label:"Zárás"},
+};
+
+const MONTH_META = {
+  1:{title:"Megszokom, hogy a nevem alatt vagyok jelen", desc:"Még egyáltalán nem kell szerepelned. Csak azt szokd meg, hogy jelen vagy."},
+  2:{title:"Megjelenik a hangom", desc:"A saját hangod és a személyiséged kezd megjelenni — még mindig apró lépésekben."},
+  3:{title:"Elkezdődik az igazi szereplés", desc:"Idáig eljutva már nem óriási esemény megmutatni magad."},
+};
+
+/* ---------------- STATE ---------------- */
+let completed = new Set();
+let xp = 0;
+let streak = 0;
+const STORAGE_KEY = "progress-v1";
+
+async function loadState(){
+  try{
+    const res = await window.storage.get(STORAGE_KEY, false);
+    if(res && res.value){
+      const parsed = JSON.parse(res.value);
+      completed = new Set(parsed.completed || []);
+      xp = parsed.xp || 0;
+      streak = parsed.streak || 0;
+    }
+  }catch(e){ /* nincs még mentett adat */ }
+  render();
+}
+
+async function saveState(){
+  try{
+    await window.storage.set(STORAGE_KEY, JSON.stringify({
+      completed:[...completed], xp, streak
+    }), false);
+  }catch(e){ console.error("Mentési hiba", e); }
+}
+
+function firstIncomplete(){
+  for(const day of DAYS){ if(!completed.has(day.d)) return day.d; }
+  return DAYS[DAYS.length-1].d + 1;
+}
+
+/* ---------------- RENDER ---------------- */
+const rowsEl = document.getElementById('rows');
+const PATTERN = [0, 34, 52, 34, 0, -34, -52, -34]; // zigzag offset px
+
+function render(){
+  rowsEl.innerHTML = "";
+  const current = firstIncomplete();
+  let lastMonth = 0, lastWeek = 0;
+  const coords = [];
+
+  DAYS.forEach((day, idx) => {
+    if(day.m !== lastMonth){
+      lastMonth = day.m;
+      const meta = MONTH_META[day.m];
+      const banner = document.createElement('div');
+      banner.className = 'month-banner';
+      banner.innerHTML = `<div class="m-eyebrow">${day.m}. HÓNAP</div>
+        <div class="m-title">${meta.title}</div>
+        <div class="m-desc">${meta.desc}</div>`;
+      rowsEl.appendChild(banner);
+    }
+    if(day.w !== lastWeek){
+      lastWeek = day.w;
+      const wm = WEEK_META[day.w];
+      const wb = document.createElement('div');
+      wb.className = 'week-banner';
+      wb.innerHTML = `<div class="w-num">${wm.label.toUpperCase()}</div><div class="w-goal">${wm.goal}</div>`;
+      rowsEl.appendChild(wb);
+    }
+
+    const row = document.createElement('div');
+    row.className = 'row';
+    const offset = PATTERN[idx % PATTERN.length];
+    row.style.justifyContent = 'center';
+
+    const wrap = document.createElement('div');
+    wrap.className = 'node-wrap';
+    wrap.style.transform = `translateX(${offset}px)`;
+
+    const isDone = completed.has(day.d);
+    const isLocked = day.d > current;
+    const isToday = day.d === current && !isDone;
+
+    const btn = document.createElement('button');
+    btn.className = 'node' + (day.type===REST ? ' rest' : '') + (isDone ? ' done' : (isLocked ? ' locked' : (isToday ? ' today' : '')));
+    btn.setAttribute('data-day', day.d);
+
+    let icon;
+    if(isDone){
+      icon = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>`;
+    } else if(isLocked){
+      icon = `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M6 10V8a6 6 0 1112 0v2h1a1 1 0 011 1v9a1 1 0 01-1 1H5a1 1 0 01-1-1v-9a1 1 0 011-1h1zm2 0h8V8a4 4 0 00-8 0v2z"/></svg>`;
+    } else if(day.type===REST){
+      icon = `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 3a9 9 0 109 9 7 7 0 01-9-9z"/></svg>`;
+    } else {
+      icon = `${day.d}`;
+    }
+    btn.innerHTML = icon;
+
+    const num = document.createElement('div');
+    num.className = 'node-daynum';
+    num.textContent = day.d + '. nap';
+    wrap.appendChild(btn);
+    wrap.appendChild(num);
+    if(isToday){
+      const badge = document.createElement('div');
+      badge.className = 'today-badge';
+      badge.textContent = 'MA';
+      wrap.appendChild(badge);
+    }
+    row.appendChild(wrap);
+    rowsEl.appendChild(row);
+
+    btn.addEventListener('click', () => openSheet(day, isLocked, isDone));
+  });
+
+  const final = document.createElement('div');
+  final.className = 'final-banner';
+  final.innerHTML = `<div class="f-emoji">🏆</div>
+    <div class="f-title">90. nap</div>
+    <div class="f-desc">Nem az a cél, hogy megszűnjön izgulni. Az a cél, hogy az izgalom ellenére is megcsináld.</div>`;
+  rowsEl.appendChild(final);
+
+  document.getElementById('streak-count').textContent = streak;
+  document.getElementById('xp-count').textContent = xp;
+  const doneCount = completed.size;
+  document.getElementById('progress-fill').style.width = (doneCount/90*100) + '%';
+  document.getElementById('progress-label').textContent = `${doneCount} / 90 nap kész`;
+
+  requestAnimationFrame(drawConnector);
+}
+
+function drawConnector(){
+  const svg = document.getElementById('connector');
+  const wrapEl = document.getElementById('path-wrap');
+  const nodeWraps = [...document.querySelectorAll('.node-wrap')];
+  if(nodeWraps.length < 2){ svg.innerHTML=''; return; }
+  const baseRect = wrapEl.getBoundingClientRect();
+  svg.setAttribute('height', wrapEl.offsetHeight);
+  const pts = nodeWraps.map(el => {
+    const r = el.getBoundingClientRect();
+    return { x: r.left + r.width/2 - baseRect.left, y: r.top + r.height/2 - baseRect.top };
+  });
+  let d = `M ${pts[0].x} ${pts[0].y}`;
+  for(let i=1;i<pts.length;i++){
+    const p0 = pts[i-1], p1 = pts[i];
+    const midY = (p0.y + p1.y)/2;
+    d += ` C ${p0.x} ${midY}, ${p1.x} ${midY}, ${p1.x} ${p1.y}`;
+  }
+  svg.innerHTML = `<path d="${d}" fill="none" stroke="#E7DCCB" stroke-width="5" stroke-linecap="round" stroke-dasharray="1 14"/>`;
+}
+window.addEventListener('resize', () => requestAnimationFrame(drawConnector));
+
+/* ---------------- SHEET / MODAL ---------------- */
+const overlay = document.getElementById('overlay');
+let activeDay = null;
+
+function openSheet(day, isLocked, isDone){
+  activeDay = day;
+  document.getElementById('sheet-eyebrow').textContent = WEEK_META[day.w].label.toUpperCase() + ` · ${day.d}. NAP`;
+  document.getElementById('sheet-title').textContent = day.t;
+  document.getElementById('sheet-week').textContent = "Heti cél: " + WEEK_META[day.w].goal;
+
+  const body = document.getElementById('sheet-body');
+  if(isLocked){
+    body.innerHTML = `<div class="locked-note">Ez a nap még zárva van. Előbb fejezd be az előző napokat — nem kell sietni.</div>
+      <div class="sheet-actions"><button class="btn btn-close" id="btn-close">Bezárás</button></div>`;
+  } else if(isDone){
+    body.innerHTML = `<div class="sheet-actions">
+      <button class="btn btn-undo" id="btn-undo">Mégsem kész</button>
+      <button class="btn btn-close" id="btn-close">Bezárás</button>
+    </div>`;
+  } else {
+    body.innerHTML = `<div class="sheet-actions">
+      <button class="btn btn-close" id="btn-close">Bezárás</button>
+      <button class="btn btn-done" id="btn-done">Kész vagyok</button>
+    </div>`;
+  }
+  overlay.classList.add('show');
+
+  document.getElementById('btn-close').onclick = closeSheet;
+  const doneBtn = document.getElementById('btn-done');
+  if(doneBtn) doneBtn.onclick = () => markDone(day);
+  const undoBtn = document.getElementById('btn-undo');
+  if(undoBtn) undoBtn.onclick = () => markUndo(day);
+}
+function closeSheet(){ overlay.classList.remove('show'); }
+overlay.addEventListener('click', e => { if(e.target === overlay) closeSheet(); });
+
+function markDone(day){
+  completed.add(day.d);
+  xp += (day.type===REST ? 5 : 10);
+  streak += 1;
+  saveState();
+  closeSheet();
+  showToast(day.type===REST ? "Megvan! +5 XP" : "Szép munka! +10 XP");
+  render();
+}
+function markUndo(day){
+  completed.delete(day.d);
+  streak = Math.max(0, streak - 1);
+  saveState();
+  closeSheet();
+  render();
+}
+
+function showToast(msg){
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 1800);
+}
+
+loadState();
+</script>
+</body>
+</html>
