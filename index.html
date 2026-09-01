@@ -390,6 +390,16 @@ function saveState(){
     console.error("Mentési hiba:", e);
   }
 }
+  function firstIncomplete(){
+  for(const day of DAYS){
+    if(!completed.has(day.d)){
+      return day.d;
+    }
+  }
+
+  // Ha mind a 90 nap elkészült
+  return 91;
+}
 /* ---------------- RENDER ---------------- */
 const rowsEl = document.getElementById('rows');
 const PATTERN = [0, 34, 52, 34, 0, -34, -52, -34]; // zigzag offset px
